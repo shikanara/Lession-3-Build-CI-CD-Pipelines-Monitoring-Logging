@@ -34,7 +34,7 @@ jobs:
           name: Back-end build
           command: |
             # My code
-            cd frontend
+            cd backend
             echo $code
             npm install
             npm run build
