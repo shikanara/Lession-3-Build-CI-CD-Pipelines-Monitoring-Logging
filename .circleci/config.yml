@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build-frontend:
     environment: 
-      code: Luan_Nguyen
+      code: Frontend-Build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -24,6 +24,8 @@ jobs:
           key: frontend-build
 
   build-backend:
+    environment: 
+      code: Backend-Build
     docker:
       - image: circleci/node:13.8.0
     steps:
