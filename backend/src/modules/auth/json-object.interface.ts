@@ -1,5 +1,8 @@
-type JsonValue = string | number | boolean;
+export type JSONPrimitive = string | number | boolean | null
+export type JSONValue = JSONPrimitive | JSONObject | JSONArray
+export type JSONObject = { [member: string]: JSONValue }
+export interface JSONArray extends Array<JSONValue> {}
 
 export interface JsonObject {
-  [k: string]: JsonValue | JsonValue[] | JsonObject;
+  [k: string]: JSONValue | JSONValue[] | JsonObject;
 }
