@@ -1,6 +1,15 @@
 version: 2.1
 
 jobs:
+  build:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - run:
+          name: Build
+          command: |
+            echo $Uda_env_var
+
   build-frontend:
     environment: 
       code: front-end-build
@@ -129,6 +138,11 @@ jobs:
           key: scanbacktend-build
 
 workflows:
+  build: 
+    jobs:
+      - build:
+          context:
+            - udapeopleContext
   default:
     jobs:
       - build-frontend
