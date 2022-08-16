@@ -164,7 +164,7 @@ workflows:
   send-notification:
     jobs:
       - notify:
-          context: udapeopleContext
+          context: slack-secrets
   build: 
     jobs:
       - build:
