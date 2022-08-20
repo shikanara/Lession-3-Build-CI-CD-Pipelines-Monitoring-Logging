@@ -1,0 +1,13 @@
+how to create slack notification: https://circleci.com/docs/slack-orb-tutorial
+
+
+
+User				Access key ID					Secret access key
+admin				AKIA6EWHLINPBJZLQWWX 			h2THwxxQvzjCXQfhUhXQRMnVbQ+MW1FCSVW16shN Hide
+
+Endpoint (Hostname): database-1.ch4a9dhlinpw.us-east-1.rds.amazonaws.com 
+Instance identifier: database-1 //This is not the database name
+Database name: postgres (default)
+Username: postgres
+Password: mypassword
+Port: 5432
