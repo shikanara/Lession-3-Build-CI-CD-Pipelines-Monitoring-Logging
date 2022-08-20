@@ -173,7 +173,9 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
-      # Checkout code from git
+      - checkout
+      - restore_cache:
+          keys: [deploy-infrastructure-build]
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -226,4 +228,8 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      - deploy-infrastructure
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [test-feature-branch]
