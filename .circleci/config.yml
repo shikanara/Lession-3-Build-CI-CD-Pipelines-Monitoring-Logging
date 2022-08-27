@@ -254,3 +254,4 @@ workflows:
           # filters:
           #   branches:
           #     only: [test-feature-branch]
+      - configure-infrastructure
