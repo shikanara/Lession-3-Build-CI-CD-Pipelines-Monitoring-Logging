@@ -23,7 +23,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(tail ~/project/backend/migration-results.txt)
+            SUCCESS=$(tail migration-results.txt)
             if (( $SUCCESS == 1 ));
             then
               echo "Reverting migration..."
@@ -230,10 +230,10 @@ jobs:
           name: Add back-end ip to ansible inventory
           command: |
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ./.circleci/ansible/inventory.txt
-      # - persist_to_workspace:
-      #     root: ~/
-      #     paths:
-      #       - project/.circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - inventory.txt
       - destroy-environment     
 
   configure-infrastructure:
