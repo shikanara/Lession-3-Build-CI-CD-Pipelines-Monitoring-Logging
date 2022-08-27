@@ -219,7 +219,6 @@ jobs:
           name: Install dependencies
           command: |
             # install the dependencies needed for your playbook
-            pip install --user ansible
             apk add --update ansible 
       - run:
           name: Configure server
