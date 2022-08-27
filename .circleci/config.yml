@@ -36,7 +36,7 @@ jobs:
     environment: 
       code: back-end-build
     docker:
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
     steps:
       - checkout
       - restore_cache:
