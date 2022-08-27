@@ -212,7 +212,7 @@ jobs:
       # Checkout code from git
       - checkout
       # Add ssh keys with fingerprint
-      - add-ssh-keys:
+      - add_ssh_keys:
           fingerprints: ["fb:df:23:66:3a:e7:49:78:53:4e:01:17:0a:03:f5:83"]
       # attach workspace
       - run:
@@ -241,6 +241,7 @@ workflows:
     jobs:
       - build-frontend
       - build-backend
+      - configure-infrastructure
       - test-frontend:
           requires: [build-frontend]
       - test-backend:
@@ -254,4 +255,4 @@ workflows:
           # filters:
           #   branches:
           #     only: [test-feature-branch]
-      - configure-infrastructure
+
