@@ -290,7 +290,7 @@ workflows:
       - build-frontend
       - build-backend
       - configure-infrastructure
-      - deploy-frontend
+      # - deploy-frontend
       - run-migrations:
           requires: [configure-infrastructure]
       - test-frontend:
