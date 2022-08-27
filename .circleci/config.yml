@@ -1,6 +1,8 @@
 version: 2.1
 orbs:
   slack: circleci/slack@4.1
+  aws-cli: circleci/aws-cli@2.0.6
+  node: circleci/node@5.0.0
 
 commands:
   destroy-environment:
@@ -31,7 +33,7 @@ commands:
             else
               echo "Not reverting migration: it was unsuccessful before"
             fi
-              
+
 jobs:
   build:
     docker:
@@ -224,17 +226,15 @@ jobs:
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
-              
-      # - run:
-      #     name: Add back-end ip to ansible inventory
-      #     command: |
-      #       # Your code here
-      #       exit 1
-      # - persist_to_workspace:
-      #     root: ~/
-      #     paths:
-      #       - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure      
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ./.circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+      - destroy-environment     
 
   configure-infrastructure:
     docker:
