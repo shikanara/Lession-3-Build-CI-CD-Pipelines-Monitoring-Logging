@@ -294,7 +294,7 @@ jobs:
       - persist_to_workspace:
           root: ~/backend
           paths: 
-            - /migration-results.txt
+            - migration-results.txt
 
   deploy-frontend:
     docker:
