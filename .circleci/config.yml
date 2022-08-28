@@ -23,6 +23,11 @@ commands:
             aws cloudformation delete-stack --stack-name "udapeople-frontend-<< parameters.id >>"
 
   revert-migrations:
+    parameters:
+      when:
+        type: string
+      id:
+        type: string
     description: Revert the last migration if successfully run in the current workflow
     steps:
       - run: 
@@ -31,9 +36,9 @@ commands:
           command: |
             # Your Memstash or kvdb.io GET URL code goes here
             # Example: Memstash.io
-            # SUCCESS=$(curl -H "token: e52b52de-ee26-41a5-86e8-e8dcc3d995a5" --request GET https://api.memstash.io/values/migration_<< parameters.workflow_id >>)
+            # SUCCESS=$(curl -H "token: e52b52de-ee26-41a5-86e8-e8dcc3d995a5" --request GET https://api.memstash.io/values/migration_<< parameters.id >>)
             # Example: kvdb.io
-            SUCCESS=$(curl --insecure  https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure  https://kvdb.io/9GE4jRtKznmVKRfvdBABBe/migration_<< parameters.id >>)
             # Logic for reverting the database state
             if (( $SUCCESS == 1 ));
             then
@@ -300,7 +305,9 @@ jobs:
                 curl https://kvdb.io/DtDTTJTQ8wMjSTCykrpoKn/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
      # Here's where you will add some code to rollback on failure      
-      - revert-migrations
+      - revert-migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   deploy-frontend:
     docker:
@@ -333,7 +340,9 @@ jobs:
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
-      - revert-migrations
+      - revert-migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   deploy-backend:
     docker:
@@ -371,7 +380,9 @@ jobs:
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
-      - revert-migrations
+      - revert-migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   smoke-test:
     docker:
@@ -414,16 +425,18 @@ jobs:
             echo "Front-end URL: ${URL}"
             if curl -s ${URL} | grep "Welcome"
             then
-              echo "Frontend OK"
+ 
               return 1
             else
-              echo "Frontend NOT OK"
+
               return 1
             fi
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
-      - revert-migrations 
+      - revert-migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
 workflows:
   send-notification:
