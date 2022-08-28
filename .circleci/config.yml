@@ -19,8 +19,8 @@ commands:
           command: |
             echo "Destroying environment: << parameters.id >>"
             aws s3 rm "s3://udapeople-<< parameters.id >>" --recursive
-            aws cloudformation delete-stack --stack-name "udapeople-<< parameters.id >>"
-            aws cloudformation delete-stack --stack-name "udapeople-<< parameters.id >>"
+            aws cloudformation delete-stack --stack-name "udapeople-backend-<< parameters.id >>"
+            aws cloudformation delete-stack --stack-name "udapeople-frontend-<< parameters.id >>"
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow
