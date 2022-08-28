@@ -102,7 +102,7 @@ jobs:
             npm run test
   scan-frontend:
     docker:
-      - image: cimg/node:16.13.1
+      - image: circleci/node:13.8.0
     resource_class: medium
     steps:
       - checkout 
@@ -118,7 +118,7 @@ jobs:
             npm audit --audit-level=critical
   scan-backend:
     docker:
-      - image: cimg/node:16.13.1
+      - image: circleci/node:13.8.0
     resource_class: medium
     steps:
       - checkout
