@@ -291,10 +291,10 @@ jobs:
                 curl https://kvdb.io/6zQXbSygNbEfouWVyiP6wk/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
      # Here's where you will add some code to rollback on failure      
-      # - persist_to_workspace:
-      #     root: ~/
-      #     paths: 
-      #       - backend/migration-results.txt
+      - persist_to_workspace:
+          root: ~/
+          paths: 
+            - backend/migration-results.txt
 
   deploy-frontend:
     docker:
