@@ -415,12 +415,12 @@ jobs:
             if curl -s ${URL} | grep "Welcome"
             then
               echo "Frontend OK"
-              exit 0
+              return 1
             else
               echo "Frontend NOT OK"
-              exit 1
+              return 1
             fi
-      - destroy-environment
+      - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
       - revert-migrations 
