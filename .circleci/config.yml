@@ -244,7 +244,7 @@ jobs:
           command: |
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ./.circleci/ansible/inventory.txt
       - persist_to_workspace:
-          root: ~/home/
+          root: .
           paths:
             - .circleci/ansible/inventory.txt
       - destroy-environment:
@@ -333,7 +333,47 @@ jobs:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail
       - revert-migrations
-                    
+
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    resource_class: medium
+    steps:
+      - checkout 
+      - add_ssh_keys:
+          fingerprints:
+            - "fb:df:23:66:3a:e7:49:78:53:4e:01:17:0a:03:f5:83"
+      - attach_workspace: 
+          at: ~/
+      - run:
+          name: Install Ansible
+          command: apk add --update ansible
+      - run: 
+          name: Install nodejs, npm
+          command: |
+            apk add --update npm
+            apk add --update nodejs
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend 
+            npm i
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p ./.circleci/ansible/roles/deploy/files
+            cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy_environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+      - revert_migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+
 workflows:
   send-notification:
     jobs:
@@ -366,3 +406,6 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+      - deploy-backend:
+          requires:
+            - run-migrations
