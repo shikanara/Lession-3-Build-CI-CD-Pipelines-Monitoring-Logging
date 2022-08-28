@@ -14,8 +14,8 @@ commands:
           command: |
             echo "Destroying environment: ${CIRCLE_WORKFLOW_ID:0:7}"
             aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
-            aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-            aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name "udapeople-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name "udapeople-${CIRCLE_WORKFLOW_ID:0:7}"
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow
     steps:
@@ -23,11 +23,12 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(tail migration-results.txt)
+            echo 
+            # SUCCESS=$(tail ~/migration-results.txt)
             if (( $SUCCESS == 1 ));
             then
               echo "Reverting migration..."
-              cd ~/project/backend
+              cd ~/backend
               npm install 
               npm run migration:revert
             else
@@ -209,6 +210,12 @@ jobs:
       - checkout
       - restore_cache:
           keys: [deploy-infrastructure-build]
+
+      - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
+
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -233,7 +240,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - inventory.txt
+            - .circleci/ansible/inventory.txt
       - destroy-environment     
 
   configure-infrastructure:
