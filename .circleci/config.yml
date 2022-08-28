@@ -129,10 +129,12 @@ jobs:
           name: Back-end audit
           command: |
             cd backend
-            npm install 
+            # npm install
+            npm install npm@latest -g 
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
             npm audit fix
+            npm audit fix --force
   deploy-infrastructure:
     docker:
       - image: amazon/aws-cli
