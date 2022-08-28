@@ -292,9 +292,9 @@ jobs:
             fi
      # Here's where you will add some code to rollback on failure      
       - persist_to_workspace:
-          root: ~/
+          root: ~/backend
           paths: 
-            - backend/migration-results.txt
+            - /migration-results.txt
 
   deploy-frontend:
     docker:
