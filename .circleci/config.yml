@@ -400,14 +400,14 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export BACKEND_IP=$(aws ec2 describe-instances --filters "Reservations[*].Instances[*].PublicIpAddress" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "export API_URL=${API_URL}" >> $BASH_ENV
             echo "API URL: ${API_URL}"
       - run:
           name: Backend smoke test
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export BACKEND_IP=$(aws ec2 describe-instances --filters "Reservations[*].Instances[*].PublicIpAddress" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL: ${API_URL}"
             echo "Wait for backend to become available..."
@@ -424,7 +424,7 @@ jobs:
       - run:
           name: Frontend smoke test
           command: |
-            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"  
+            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/index.html"  
             echo "Front-end URL: ${URL}"
             if curl -s ${URL} | grep "Welcome"
             then
