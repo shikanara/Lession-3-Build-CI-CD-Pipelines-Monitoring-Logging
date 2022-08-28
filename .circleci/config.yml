@@ -18,7 +18,7 @@ commands:
           when: on_fail
           command: |
             echo "Destroying environment: << parameters.id >>"
-            aws s3 rm "s3://udapeople-<< parameters.id >>"
+            # aws s3 rm "s3://udapeople-<< parameters.id >>"
             aws cloudformation delete-stack --stack-name "udapeople-backend-<< parameters.id >>"
             aws cloudformation delete-stack --stack-name "udapeople-frontend-<< parameters.id >>"
 
