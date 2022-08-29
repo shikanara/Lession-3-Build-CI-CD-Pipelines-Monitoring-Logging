@@ -10,7 +10,6 @@ jobs:
           name: Build
           command: |
             echo $Uda_env_var
-
   build-frontend:
     environment: 
       code: front-end-build
