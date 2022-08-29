@@ -6,9 +6,9 @@ commands:
   notify_on_failure:
     steps:
       - slack/notify:
-        event: fail
-        channel: cicd-pipeline
-        template: basic_fail_1
+          event: fail
+          channel: cicd-pipeline
+          template: basic_fail_1
   
   build:
     docker:
@@ -39,6 +39,7 @@ commands:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - notify_on_failure
 
   build-backend:
     environment: 
@@ -58,7 +59,8 @@ commands:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-
+      - notify_on_failure
+      
   test-frontend:
     environment: 
       code: test-front-end-build
@@ -222,9 +224,9 @@ commands:
       - image: cimg/base
     steps:
       - slack/notify:
-        event: pass
-        channel: cicd-pipeline
-        template: success_tagged_deployment_1
+          event: pass
+          channel: cicd-pipeline
+          template: success_tagged_deployment_1
 
 workflows:
   send-notification:
