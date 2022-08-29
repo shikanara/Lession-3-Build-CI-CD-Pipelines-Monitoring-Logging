@@ -1,14 +1,7 @@
 version: 2.1
-
 orbs:
   slack: circleci/slack@4.1
-commands:
-  notify_on_failure:
-    steps:
-      - slack/notify:
-          event: fail
-          channel: cicd-pipeline
-          template: basic_fail_1
+jobs:
   build:
     docker:
       - image: circleci/node:13.8.0
@@ -37,7 +30,6 @@ commands:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
-      - notify_on_failure
 
   build-backend:
     environment: 
@@ -57,7 +49,6 @@ commands:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-      - notify_on_failure
 
   test-frontend:
     environment: 
@@ -79,7 +70,6 @@ commands:
       - save_cache:
           paths: [backend/node_modules]
           key: testfrontend-build
-      - notify_on_failure
                 
   test-backend:
     environment: 
@@ -101,7 +91,6 @@ commands:
       - save_cache:
           paths: [backend/node_modules]
           key: testbacktend-build
-      - notify_on_failure
 
   scan-frontend:
     environment: 
@@ -124,7 +113,6 @@ commands:
       - save_cache:
           paths: [frontend/node_modules]
           key: scanfrontend-build
-      - notify_on_failure
 
   scan-backend:
     environment: 
@@ -148,35 +136,34 @@ commands:
       - save_cache:
           paths: [backend/node_modules]
           key: scanbacktend-build
-      - notify_on_failure
 
-  # notify:
-  #   docker:
-  #     - image: 'cimg/base:stable'
-  #   steps:
-  #     - slack/notify:
-  #         custom: |
-  #           {
-  #             "blocks": [
-  #               {
-  #                 "type": "section",
-  #                 "fields": [
-  #                   {
-  #                     "type": "plain_text",
-  #                     "text": "*New commit is comming*",
-  #                     "emoji": true
-  #                   }
-  #                 ]
-  #               }
-  #             ]
-  #           }
-  #         event: always
-  #     - slack/notify:
-  #         event: fail
-  #         template: basic_fail_1
-  #     - slack/notify:
-  #         event: pass
-  #         template: success_tagged_deploy_1
+  notify:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "plain_text",
+                      "text": "*New commit is comming*",
+                      "emoji": true
+                    }
+                  ]
+                }
+              ]
+            }
+          event: always
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: success_tagged_deploy_1
 
   deploy-infrastructure:
     environment: 
@@ -217,20 +204,12 @@ commands:
             - project/.circleci/ansible/inventory.txt
       # Here's where you will add some code to rollback on failure      
 
-  notify_on_success:
-    docker:
-      - image: cimg/base
-    steps:
-      - slack/notify:
-          event: pass
-          channel: cicd-pipeline
-          template: success_tagged_deployment_1
 
 workflows:
-  # send-notification:
-  #   jobs:
-  #     - notify:
-  #         context: slack-secrets
+  send-notification:
+    jobs:
+      - notify:
+          context: slack-secrets
   build: 
     jobs:
       - build:
@@ -248,8 +227,6 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      - notify_on_success: 
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           filters:
