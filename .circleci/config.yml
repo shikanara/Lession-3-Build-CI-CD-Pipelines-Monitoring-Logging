@@ -9,6 +9,7 @@ commands:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
+
   install_ansible:
     description: Install Ansible v2
     steps:
@@ -31,6 +32,27 @@ commands:
             aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
             aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
             aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow
+    parameters:
+      Workflow_ID:
+        type: string
+    steps:
+      - run: 
+          name: Revert migrations
+          when: on_fail
+          command: |
+            SUCCESS=$(curl --insecure http://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+            if (( $SUCCESS == 1 ));
+            then
+              echo "Reverting migration..."
+              cd ~/project/backend
+              npm install 
+              npm run migration:revert
+            else
+              echo "Not reverting migration: it was unsuccessful before"
+            fi
 
 orbs:
   slack: circleci/slack@4.1
@@ -247,6 +269,7 @@ jobs:
     resource_class: medium
     steps:
       - checkout 
+      - install_ansible
       - add_ssh_keys:
           fingerprints: ["fb:df:23:66:3a:e7:49:78:53:4e:01:17:0a:03:f5:83"]
       - attach_workspace: 
@@ -262,6 +285,40 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment
+
+  run-migrations:
+    docker:
+      - image: cimg/node:16.13.1
+    resource_class: medium
+    steps:
+      - checkout
+      - install_awscli
+      - run:
+          name: Run migrations
+          command: |
+            cd ~/project/backend
+            npm install 
+            npm run migrations > migrations_dump.txt 
+      - run:
+          # It seems like memstash.io is no longer available/accessible (?)
+          name: Report migration results
+          command: |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+              echo "Migration succeeded for ${CIRCLE_WORKFLOW_ID:0:7}"
+              echo "1" >> ~/project/backend/migration-results.txt
+            else
+              echo "Migration failed for ${CIRCLE_WORKFLOW_ID:0:7}:"
+              cat ~/project/backend/migrations_dump.txt
+              echo "fail" >> ~/project/backend/migration-results.txt
+              echo "Migration failed for ${CIRCLE_WORKFLOW_ID:0:7}"
+            fi
+      - persist_to_workspace:
+          root: ~/
+          paths: 
+            - project/backend/migration-results.txt
+      - destroy-environment
+      - revert-migrations
 
 workflows:
   send-notification:
@@ -292,3 +349,5 @@ workflows:
               only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
