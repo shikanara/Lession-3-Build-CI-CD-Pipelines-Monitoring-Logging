@@ -364,8 +364,6 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "fb:df:23:66:3a:e7:49:78:53:4e:01:17:0a:03:f5:83"
-      - attach_workspace: 
-          at: ~/
       - restore_cache:
           keys: [backend-deps]
       - run: 
@@ -378,7 +376,7 @@ jobs:
           command: |
             cd backend
             npm run build
-            tar -czf artifact.tar.gz dist/* package*
+            tar -C backend -czvf artifact.tar.gz .
 
             cd ..
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
@@ -405,18 +403,14 @@ jobs:
       - run:
           name: Backend smoke test
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "export API_URL=${API_URL}" >> $BASH_ENV
-            echo "API URL: ${API_URL}"
-      - run:
-          name: Backend smoke test
-          command: |
-            echo "Wait for backend to become available..."
-            sleep 30s
-            echo "Attempting to reach backend..."
-            if curl "${API_URL}/api/status" | grep "ok"
-            then
+            if curl -s ${API_URL}/api/status | grep "ok"
+            then 
               echo "Backend status OK"
               exit 0
             else
@@ -426,15 +420,15 @@ jobs:
       - run:
           name: Frontend smoke test
           command: |
-            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"  
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/"  
             echo "Front-end URL: ${URL}"
             if curl -s ${URL} | grep "Welcome"
             then
               echo "Frontend OK"
-              exit 0
+              exit 1
             else
               echo "Frontend NOT OK"
-              exit 1
+              exit 2
             fi
       - destroy-environment
       - revert-migrations 
