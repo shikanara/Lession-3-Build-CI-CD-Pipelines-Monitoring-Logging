@@ -1,24 +1,36 @@
 version: 2.1
 commands:
-    install_awscli:
-      description: Install AWS CLI v2
-      steps:
-        - run:
-            name: Install AWS CLI v2
-            command: |
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip awscliv2.zip
-              sudo ./aws/install
-    install_ansible:
-      description: Install Ansible v2
-      steps:
-        - run:
-            name: Install Ansible v2
-            command: |
-              sudo apt update
-              sudo apt install software-properties-common
-              sudo add-apt-repository --yess --update ppa:ansible/ansible
-              sudo apt install ansible         
+  install_awscli:
+    description: Install AWS CLI v2
+    steps:
+      - run:
+          name: Install AWS CLI v2
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+  install_ansible:
+    description: Install Ansible v2
+    steps:
+      - run:
+          name: Install Ansible v2
+          command: |
+            sudo apt update
+            sudo apt install software-properties-common
+            sudo add-apt-repository --yess --update ppa:ansible/ansible
+            sudo apt install ansible
+
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            echo "Destroying environment: ${CIRCLE_WORKFLOW_ID:0:7}"
+            aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
+            aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
 
 orbs:
   slack: circleci/slack@4.1
@@ -227,7 +239,29 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
       # Here's where you will add some code to rollback on failure      
+      - destroy-environment
 
+  configure-infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    resource_class: medium
+    steps:
+      - checkout 
+      - add_ssh_keys:
+          fingerprints: ["fb:df:23:66:3a:e7:49:78:53:4e:01:17:0a:03:f5:83"]
+      - attach_workspace: 
+          at: ~/
+      # - run:
+      #     name: Install dependencies
+      #     command: |
+      #       apk add --update ansible
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible 
+            cat inventory.txt
+            ansible-playbook -i inventory.txt configure-server.yml
+      - destroy-environment
 
 workflows:
   send-notification:
@@ -256,3 +290,5 @@ workflows:
           filters:
             branches:
               only: [master]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
