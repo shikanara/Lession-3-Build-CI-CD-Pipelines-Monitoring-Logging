@@ -38,6 +38,7 @@ commands:
     parameters:
       Workflow_ID:
         type: string
+        defalut: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run: 
           name: Revert migrations
