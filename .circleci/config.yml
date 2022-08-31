@@ -1,4 +1,25 @@
 version: 2.1
+commands:
+    install_awscli:
+      description: Install AWS CLI v2
+      steps:
+        - run:
+            name: Install AWS CLI v2
+            command: |
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip awscliv2.zip
+              sudo ./aws/install
+    install_ansible:
+      description: Install Ansible v2
+      steps:
+        - run:
+            name: Install Ansible v2
+            command: |
+              sudo apt update
+              sudo apt install software-properties-common
+              sudo add-apt-repository --yess --update ppa:ansible/ansible
+              sudo apt install ansible         
+
 orbs:
   slack: circleci/slack@4.1
 jobs:
@@ -10,6 +31,7 @@ jobs:
           name: Build
           command: |
             echo $Uda_env_var
+            
   build-frontend:
     environment: 
       code: front-end-build
@@ -166,13 +188,11 @@ jobs:
           template: success_tagged_deploy_1
 
   deploy-infrastructure:
-    environment: 
-      id: udapeople-shika1j287dhjppmz437
-      backendId: 
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_awscli
       - restore_cache:
           keys: [deploy-infrastructure-build]
       - run:
@@ -196,8 +216,12 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            # Your code here
-            exit 1
+            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+              echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+              cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
@@ -231,4 +255,4 @@ workflows:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           filters:
             branches:
-              only: [test-feature-branch]
+              only: [master]
