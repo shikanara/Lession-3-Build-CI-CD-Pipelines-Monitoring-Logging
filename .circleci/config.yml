@@ -350,9 +350,6 @@ jobs:
           command: |
             cd frontend
             npm install
-      - attach_workspace: 
-          at: ~/
-      - aws-cli/setup
       - run:
           name: Get backend url
           command: |
