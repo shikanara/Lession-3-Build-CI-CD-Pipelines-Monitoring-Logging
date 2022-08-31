@@ -384,7 +384,7 @@ jobs:
           name: Deploy backend
           command: |
             export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity.ts
             export TYPEORM_MIGRATIONS=./migrations/*.ts
 
             cd .circleci/ansible
@@ -447,7 +447,7 @@ jobs:
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
             echo "OldWorkflowID: ${OLD_WORKFLOW_ID}"
-            echo $OldWorkflowID >> ~/project/old-workflow-id.txt
+            curl https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Update cloudfront distribution
           command: |
