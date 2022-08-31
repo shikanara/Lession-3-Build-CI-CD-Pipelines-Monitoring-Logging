@@ -53,7 +53,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure http://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
             if (( $SUCCESS == 1 ));
             then
               echo "Reverting migration..."
@@ -386,12 +386,56 @@ jobs:
           name: Deploy backend
           command: |
             export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity.ts
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
             export TYPEORM_MIGRATIONS=./migrations/*.ts
 
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy-environment
+      - revert-migrations 
+
+  smoke-test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - install_awscli
+      - install_nodejs
+      - run:
+          name: Backend smoke test
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "export API_URL=${API_URL}" >> $BASH_ENV
+            echo "API URL: ${API_URL}"
+      - run:
+          name: Backend smoke test
+          command: |
+            echo "Wait for backend to become available..."
+            sleep 30s
+            echo "Attempting to reach backend..."
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              echo "Backend status OK"
+              exit 0
+            else
+              echo "Backend status NOT OK"
+              exit 1
+            fi
+      - run:
+          name: Frontend smoke test
+          command: |
+            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"  
+            echo "Front-end URL: ${URL}"
+            if curl -s ${URL} | grep "Welcome"
+            then
+              echo "Frontend OK"
+              exit 0
+            else
+              echo "Frontend NOT OK"
+              exit 1
+            fi
       - destroy-environment
       - revert-migrations 
 
