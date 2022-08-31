@@ -18,7 +18,7 @@ commands:
           command: |
             sudo apt update
             sudo apt install software-properties-common
-            sudo add-apt-repository --yess --update ppa:ansible/ansible
+            sudo add-apt-repository --yes --update ppa:ansible/ansible
             sudo apt install ansible
 
   destroy-environment:
@@ -271,6 +271,7 @@ jobs:
     resource_class: medium
     steps:
       - checkout 
+      - install_awscli
       - install_ansible
       - add_ssh_keys:
           fingerprints: ["fb:df:23:66:3a:e7:49:78:53:4e:01:17:0a:03:f5:83"]
