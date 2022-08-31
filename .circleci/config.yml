@@ -312,19 +312,23 @@ jobs:
             npm install 
             npm run migrations > migrations_dump.txt 
       - run:
-          # It seems like memstash.io is no longer available/accessible (?)
-          name: Report migration results
+          name: Send migration status to kvdb.io
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              echo "Migration succeeded for ${CIRCLE_WORKFLOW_ID:0:7}"
-              echo "1" >> ~/project/backend/migration-results.txt
-            else
-              echo "Migration failed for ${CIRCLE_WORKFLOW_ID:0:7}:"
-              cat ~/project/backend/migrations_dump.txt
-              echo "fail" >> ~/project/backend/migration-results.txt
-              echo "Migration failed for ${CIRCLE_WORKFLOW_ID:0:7}"
+              curl http://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}) -d '1'
             fi
+          # command: |
+          #   if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+          #   then
+          #     echo "Migration succeeded for ${CIRCLE_WORKFLOW_ID:0:7}"
+          #     echo "1" >> ~/project/backend/migration-results.txt
+          #   else
+          #     echo "Migration failed for ${CIRCLE_WORKFLOW_ID:0:7}:"
+          #     cat ~/project/backend/migrations_dump.txt
+          #     echo "fail" >> ~/project/backend/migration-results.txt
+          #     echo "Migration failed for ${CIRCLE_WORKFLOW_ID:0:7}"
+          #   fi
       - persist_to_workspace:
           root: ~/
           paths: 
