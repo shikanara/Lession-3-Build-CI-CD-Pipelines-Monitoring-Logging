@@ -266,6 +266,8 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
               echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+              # todo:
+              curl https://kvdb.io/${KVDB_BUCKET}/inventory_${CIRCLE_WORKFLOW_ID:0:7} -d "$BACKEND_PUBLIC_IP"
               cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
@@ -382,8 +384,9 @@ jobs:
             export TYPEORM_MIGRATIONS_DIR=./migrations
             export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
             export TYPEORM_MIGRATIONS=./migrations/*.ts
-
+  
             cd .circleci/ansible
+            echo "$(<inventory.txt )"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
