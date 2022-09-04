@@ -431,10 +431,10 @@ jobs:
             if curl -s ${URL} | grep "Welcome"
             then
               echo "Frontend OK"
-              exit 1
+              exit 0
             else
               echo "Frontend NOT OK"
-              exit 2
+              exit 1
             fi
       - destroy-environment
       - revert-migrations 
