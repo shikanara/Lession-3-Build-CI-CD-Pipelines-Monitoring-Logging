@@ -42,8 +42,8 @@ Resources:
       SubnetId : !Ref VpcSubnet
 
   VpcSubnet: 
-    Description : "Enter the VPC subnet",
-    Type : AWS::EC2::Subnet::Id",
+    Description : "Enter the VPC subnet"
+    Type : AWS::EC2::Subnet::Id"
     Default : "vpc-0b0769262d0c9463c"
   
     
