@@ -44,7 +44,7 @@ Resources:
   VpcSubnet: 
     Description : "Enter the VPC subnet"
     Type : AWS::EC2::Subnet::Id"
-    Default : "vpc-0b0769262d0c9463c"
+    Value : "vpc-0b0769262d0c9463c"
   
     
   # PublicSubnet1: 
