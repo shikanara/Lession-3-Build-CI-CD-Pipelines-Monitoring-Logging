@@ -15,16 +15,17 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 172.30.0.0/16
+          CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 3030
           ToPort: 3030
-          CidrIp: 172.30.0.0/16
+          CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
         - IpProtocol: tcp
           FromPort: 3030
           ToPort: 3030
-          CidrIp: 172.30.0.0/16
+          CidrIp: 0.0.0.0/0
+          VpcId: vpc-0b0769262d0c9463c
 
   EC2Instance:
     Type: AWS::EC2::Instance
