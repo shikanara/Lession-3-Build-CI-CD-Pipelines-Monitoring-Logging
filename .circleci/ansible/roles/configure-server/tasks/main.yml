@@ -1,86 +1,86 @@
 ---
-- name: "Add Node.js from Nodesource"
-  become: true
-  shell: |
-    curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+# - name: "Add Node.js from Nodesource"
+#   become: true
+#   shell: |
+#     curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
 
-- name: "Install nodejs 13"
+# - name: "Install nodejs 13"
+#   become: true
+#   apt:
+#     name: ["nodejs"]
+#     state: latest
+#     update_cache: yes
+
+# - name: "Install pm2"
+#   become: true
+#   npm:
+#     name: "pm2"
+#     global: "yes"
+#     production: yes
+#     state: present
+
+- name: "Install python"
   become: true
   apt:
-    name: ["nodejs"]
+    name: python3
     state: latest
-    update_cache: yes
-
-- name: "Install pm2"
-  become: true
-  npm:
-    name: "pm2"
-    global: "yes"
-    production: yes
-    state: present
-
-# - name: "Install python"
-#   become: true
-#   apt:
-#     name: python3
-#     state: latest
-#     update_cache: "yes"
+    update_cache: "yes"
     
-# - name: "Update/upgrade packages"
-#   become: true
-#   apt:
-#     update_cache: "yes"
-#     upgrade: "yes"
+- name: "Update/upgrade packages"
+  become: true
+  apt:
+    update_cache: "yes"
+    upgrade: "yes"
 
-# - name: "Install nodejs, npm"
-#   become: true
-#   shell:
-#     cmd: "apt install -y nodejs npm"
+- name: "Install nodejs, npm"
+  become: true
+  shell:
+    cmd: "apt install -y nodejs npm"
 
 # !!! See note in backend README about .env !!!
 
-# - name: "Set environment variable: TYPEORM_CONNECTION"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_CONNECTION={{ lookup('env', 'TYPEORM_CONNECTION')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_CONNECTION"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_CONNECTION={{ lookup('env', 'TYPEORM_CONNECTION')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_ENTITIES"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_ENTITIES={{ lookup('env', 'TYPEORM_ENTITIES')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_ENTITIES"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_ENTITIES={{ lookup('env', 'TYPEORM_ENTITIES')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_HOST"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_HOST={{ lookup('env', 'TYPEORM_HOST')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_HOST"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_HOST={{ lookup('env', 'TYPEORM_HOST')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_PORT"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_PORT=5432" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_PORT"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_PORT=5432" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_USERNAME"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_USERNAME={{ lookup('env', 'TYPEORM_USERNAME')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_USERNAME"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_USERNAME={{ lookup('env', 'TYPEORM_USERNAME')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_PASSWORD"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_PASSWORD={{ lookup('env', 'TYPEORM_PASSWORD')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_PASSWORD"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_PASSWORD={{ lookup('env', 'TYPEORM_PASSWORD')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_DATABASE"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_DATABASE={{ lookup('env', 'TYPEORM_DATABASE')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_DATABASE"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_DATABASE={{ lookup('env', 'TYPEORM_DATABASE')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_MIGRATIONS"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_MIGRATIONS={{ lookup('env', 'TYPEORM_MIGRATIONS')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_MIGRATIONS"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_MIGRATIONS={{ lookup('env', 'TYPEORM_MIGRATIONS')}}" >> /home/ubuntu/.env
 
-# - name: "Set environment variable: TYPEORM_MIGRATIONS_DIR"
-#   become: true
-#   shell:
-#     cmd: echo "TYPEORM_MIGRATIONS_DIR={{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}" >> /home/ubuntu/.env
+- name: "Set environment variable: TYPEORM_MIGRATIONS_DIR"
+  become: true
+  shell:
+    cmd: echo "TYPEORM_MIGRATIONS_DIR={{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}" >> /home/ubuntu/.env
 
