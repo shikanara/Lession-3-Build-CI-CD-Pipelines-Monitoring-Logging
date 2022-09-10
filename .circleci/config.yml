@@ -349,7 +349,6 @@ jobs:
       - run:
           name: Deploy frontend objects
           command: |
-            npm install webpack-dev-server -g
             cd frontend
             npm i
             npm run build 
@@ -365,7 +364,7 @@ jobs:
 
     steps:
       - checkout 
-      # - install_awscli
+      - install_awscli
       # - install_nodejs
       # - install_ansible
       - add_ssh_keys:
