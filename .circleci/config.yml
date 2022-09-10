@@ -349,6 +349,8 @@ jobs:
             sudo apt update
             sudo apt install nodejs
             sudo apt install npm
+            sudo apt install curl
+            sudo apt-get install -y openssh-server openssh-client
       - run: 
           name: Add env vars to env file
           command: |
