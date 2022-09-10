@@ -59,7 +59,7 @@ commands:
               echo "Reverting migration..."
               cd ~/project/backend
               npm install 
-              npm run migration:revert
+              npm run migrations:revert
             else
               echo "Not reverting migration: it was unsuccessful before"
             fi
@@ -89,9 +89,7 @@ jobs:
       - run:
           name: Build front-end
           command: |
-            # My code
             cd frontend
-            echo $code
             npm install
             npm run build
       - save_cache:
@@ -111,8 +109,9 @@ jobs:
           name: Back-end build
           command: |
             cd backend
-            npm install
+            npm i
             npm run build
+            npm audit fix --force --audit-level=critical
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
@@ -129,9 +128,7 @@ jobs:
       - run:
           name: Build test-front-end
           command: |
-            # My code
             cd frontend
-            echo $code
             npm install
             npm run test
       - save_cache:
@@ -150,9 +147,7 @@ jobs:
       - run:
           name: Build test-back-end
           command: |
-            # My code
             cd backend
-            echo $code
             npm install
             npm run test
       - save_cache:
@@ -171,10 +166,8 @@ jobs:
       - run:
           name: Build scan-front-end
           command: |
-            # My code
             cd frontend
             npm install
-            # npm install oauth-sign@^0.9.0
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
       - save_cache:
@@ -193,13 +186,10 @@ jobs:
       - run:
           name: Build scan-back-end
           command: |
-            # My code
             cd backend
             npm install
-            # npm install oauth-sign@^0.9.0
             npm audit fix
             npm audit fix --audit-level=critical --force
-            # npm audit --audit-level=critical
       - save_cache:
           paths: [backend/node_modules]
           key: scanbacktend-build
@@ -237,27 +227,30 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - install_awscli
+      # - install_awscli
       - restore_cache:
           keys: [deploy-infrastructure-build]
+      - run:
+          name: Install tar/gzip utility
+          command: |
+            yum -y install tar
+            yum -y install gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
               --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-              --tags project=udapeople
-              
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Ensure front-end infrastructure exist
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
               --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-              --tags project=udapeople
-              
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Add back-end ip to ansible inventory
           command: |
@@ -267,6 +260,7 @@ jobs:
               --output text)
               echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
               cat .circleci/ansible/inventory.txt
+              
       - persist_to_workspace:
           root: ~/
           paths:
@@ -277,7 +271,6 @@ jobs:
   configure-infrastructure:
     docker:
       - image: cimg/base:stable
-    resource_class: medium
     steps:
       - checkout 
       - install_awscli
@@ -287,16 +280,24 @@ jobs:
       - attach_workspace: 
           at: ~/
       - run:
+          name: Install dependencies
+          command: |
+            apk add tar
+            apk add gzip
+            apk add openssh-client
+            apk add curl
+            pip install awscli
+            apk add --update ansible
+      - run:
           name: Configure server
           command: |
+            export ANSIBLE_HOST_KEY_CHECKING=False
             BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
-            echo "show public ip"
             cd .circleci/ansible 
-            cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
       # - destroy-environment
 
@@ -312,6 +313,7 @@ jobs:
             cd backend
             npm install
             npm run migrations > migrations_dump.txt 
+            cat migrations_dump.txt
       - run:
           name: Send migration status to kvdb.io
           command: |
@@ -337,17 +339,21 @@ jobs:
           name: Get backend url
           command: |
             BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-
-            echo "API_URL=http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
+            npm install webpack-dev-server -g
             cd frontend
+            npm i
             npm run build 
+            npm audit fix --force --audit-level=critical
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment
       - revert-migrations 
@@ -357,23 +363,40 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout 
-      - install_awscli
-      - install_nodejs
-      - install_ansible
+      # - install_awscli
+      # - install_nodejs
+      # - install_ansible
       - add_ssh_keys:
           fingerprints:
             - "e3:13:d7:86:83:cb:b4:e3:5f:da:56:9e:ef:96:3d:05"
       - restore_cache:
           keys: [backend-deps]
-      - run: 
+      - run:
           name: Install dependencies
           command: |
-            cd backend
-            npm install
+            python3 -m pip install --user ansible
+            sudo apt update
+            sudo apt install nodejs
+            sudo apt install npm
       - run: 
-          name: Package backend
+          name: Add env vars to env file
+          command: |
+            echo "NODE_ENV=production" >> backend/.env
+            echo "VERSION=1" >> backend/.env
+            echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> backend/.env
+            echo "TYPEORM_MIGRATIONS_DIR=${TYPEORM_MIGRATIONS_DIR}" >> backend/.env
+            echo "TYPEORM_ENTITIES=${TYPEORM_ENTITIES}" >> backend/.env
+            echo "TYPEORM_MIGRATIONS=${TYPEORM_MIGRATIONS}" >> backend/.env
+            echo "TYPEORM_HOST=${TYPEORM_HOST}" >> backend/.env
+            echo "TYPEORM_PORT=${TYPEORM_PORT}" >> backend/.env
+            echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
+            echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
+            echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env  
+      - run:
+          name: Deploy backend and run ansible
           command: |
             cd backend
+            npm i
             npm run build
             tar -czf artifact.tar.gz dist/* package*
 
@@ -382,18 +405,8 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
-
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text)
-              echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
   
-            cd .circleci/ansible
-            cat inventory.txt
+            cd ~/project/.circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
       - revert-migrations 
@@ -415,7 +428,7 @@ jobs:
 
             export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo ${API_URL}/api/status
-            # if curl -s ${API_URL}/api/status | grep "ok"
+            # if curl "http://${BACKEND_IP}:3030/api/status" | grep "ok"
             # then 
             #   echo "Backend status OK"
             #   exit 0
