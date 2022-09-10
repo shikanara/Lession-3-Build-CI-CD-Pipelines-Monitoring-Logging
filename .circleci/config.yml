@@ -78,8 +78,6 @@ jobs:
             echo $Uda_env_var
             
   build-frontend:
-    environment: 
-      code: front-end-build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -97,8 +95,6 @@ jobs:
           key: frontend-build
 
   build-backend:
-    environment: 
-      code: back-end-build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -117,8 +113,6 @@ jobs:
           key: backend-build
 
   test-frontend:
-    environment: 
-      code: test-front-end-build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -131,13 +125,8 @@ jobs:
             cd frontend
             npm install
             npm run test
-      - save_cache:
-          paths: [backend/node_modules]
-          key: testfrontend-build
                 
   test-backend:
-    environment: 
-      code: test-back-end-build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -150,13 +139,8 @@ jobs:
             cd backend
             npm install
             npm run test
-      - save_cache:
-          paths: [backend/node_modules]
-          key: testbacktend-build
 
   scan-frontend:
-    environment: 
-      code: scan-front-end-build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -170,13 +154,8 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: scanfrontend-build
 
   scan-backend:
-    environment: 
-      code: scan-back-end-build
     docker:
       - image: circleci/node:13.8.0
     steps:
@@ -188,11 +167,7 @@ jobs:
           command: |
             cd backend
             npm install
-            npm audit fix
             npm audit fix --audit-level=critical --force
-      - save_cache:
-          paths: [backend/node_modules]
-          key: scanbacktend-build
 
   notify:
     docker:
@@ -227,9 +202,6 @@ jobs:
       - image: amazon/aws-cli:latest
     steps:
       - checkout
-      # - install_awscli
-      - restore_cache:
-          keys: [deploy-infrastructure-build]
       - run:
           name: Install tar/gzip utility
           command: |
@@ -297,7 +269,8 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
-            cd .circleci/ansible 
+            cat ~/project/.circleci/ansible/inventory.txt
+            cd ~/project/.circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment
 
@@ -317,17 +290,19 @@ jobs:
       - run:
           name: Send migration status to kvdb.io
           command: |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
               curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
       - destroy-environment
       - revert-migrations
 
   deploy-frontend:
     docker:
-      - image: cimg/base:stable
+      - image: amazon/aws-cli
     steps:
       - checkout
-      - install_awscli
-      - install_nodejs
+      # - install_awscli
+      # - install_nodejs
       - restore_cache:
           keys: [frontend-deps]
       - run: 
@@ -335,6 +310,20 @@ jobs:
           command: |
             cd frontend
             npm install
+      - run:
+          name: Install dependencies Node
+          command: |
+            curl -sL https://rpm.nodesource.com/setup_13.x | bash -
+            yum -y install nodejs
+            node -v
+      - run:
+          name: Install dependencies tar
+          command: |
+            yum -y install tar
+      - run:
+          name: Install dependencies gzip
+          command: |
+            yum -y install gzip      
       - run:
           name: Get backend url
           command: |
@@ -349,12 +338,16 @@ jobs:
       - run:
           name: Deploy frontend objects
           command: |
+            npm install webpack-dev-server -g
             cd frontend
             npm i
             npm run build 
             npm audit fix --force --audit-level=critical
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - run:
+          name: Deploy frontend objects
+          command: |
+            aws s3 sync frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}
       - destroy-environment
       - revert-migrations 
 
@@ -370,8 +363,6 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "e3:13:d7:86:83:cb:b4:e3:5f:da:56:9e:ef:96:3d:05"
-      - restore_cache:
-          keys: [backend-deps]
       - run:
           name: Install dependencies
           command: |
@@ -410,7 +401,7 @@ jobs:
               --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-              echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
             cd ~/project/.circleci/ansible
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
@@ -433,14 +424,14 @@ jobs:
 
             export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo ${API_URL}/api/status
-            # if curl "http://${BACKEND_IP}:3030/api/status" | grep "ok"
-            # then 
-            #   echo "Backend status OK"
-            #   exit 0
-            # else
-            #   echo "Backend status NOT OK"
-            #   exit 1
-            # fi
+            if curl "http://${BACKEND_IP}:3030/api/status" | grep "ok"
+            then 
+              echo "Backend status OK"
+              exit 0
+            else
+              echo "Backend status NOT OK"
+              exit 1
+            fi
       - run:
           name: Frontend smoke test
           command: |
