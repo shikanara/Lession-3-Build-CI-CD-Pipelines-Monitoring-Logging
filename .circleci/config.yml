@@ -270,11 +270,11 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: cimg/base:stable
+      - image: python:3.7-alpine3.11
     steps:
       - checkout 
-      - install_awscli
-      - install_ansible
+      # - install_awscli
+      # - install_ansible
       - add_ssh_keys:
           fingerprints: ["e3:13:d7:86:83:cb:b4:e3:5f:da:56:9e:ef:96:3d:05"]
       - attach_workspace: 
@@ -299,7 +299,7 @@ jobs:
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
             cd .circleci/ansible 
             ansible-playbook -i inventory.txt configure-server.yml
-      # - destroy-environment
+      - destroy-environment
 
   run-migrations:
     docker:
