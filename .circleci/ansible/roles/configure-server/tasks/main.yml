@@ -1,17 +1,20 @@
-- name: "wait 60 seconds for target connection to become reachable/usable."
+---
+- name: "Install python"
+  become: true
+  apt:
+    name: python3
+    state: latest
+    update_cache: "yes"
+
+- name: "wait 600 seconds for target connection to become reachable/usable."
   wait_for_connection:
-    timeout: 60
-
-- name: "update apt packages"
+    timeout: 600
+    
+- name: "Update/upgrade packages"
   become: true
   apt:
-    update_cache: yes
-
-- name: "upgrade packages"
-  become: true
-  apt:
+    update_cache: "yes"
     upgrade: "yes"
-    update_cache: yes
 
 - name: "install dependencies."
   become: true
@@ -20,10 +23,10 @@
     state: latest
     update_cache: yes
 
-- name: "install pm2"
+- name: "Install pm2"
   become: true
   npm:
-    name: pm2
+    name: "pm2"
     global: true
     production: true
     state: present
