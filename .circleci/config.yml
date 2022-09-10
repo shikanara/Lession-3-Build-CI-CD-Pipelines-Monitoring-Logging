@@ -385,25 +385,29 @@ jobs:
             echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
             echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
             echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env  
-      - run:
-          name: Deploy backend and run ansible
+      - run: 
+          name: Package backend
           command: |
             cd backend
             npm i
             npm run build
             tar -czf artifact.tar.gz dist/* package*
-
             cd ..
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
       - run:
           name: Deploy backend
           command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
             BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-              --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
-            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
-            cd ~/project/.circleci/ansible
+              echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+  
+            cd .circleci/ansible
+            cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
       - revert-migrations 
