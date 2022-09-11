@@ -1,8 +1,17 @@
----
-- name: "upgrade packages."
+- name: "wait 60 seconds for target connection to become reachable/usable."
+  wait_for_connection:
+    timeout: 60
+
+- name: "update apt packages"
+  become: true
+  apt:
+    update_cache: yes
+
+- name: "upgrade packages"
   become: true
   apt:
     upgrade: "yes"
+    update_cache: yes
 
 - name: "install dependencies."
   become: true
@@ -15,6 +24,6 @@
   become: true
   npm:
     name: pm2
-    global: yes
-    production: yes
+    global: true
+    production: true
     state: present
