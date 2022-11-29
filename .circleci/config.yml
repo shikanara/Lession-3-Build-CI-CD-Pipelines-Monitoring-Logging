@@ -329,65 +329,49 @@ jobs:
       - destroy-environment
       - revert-migrations 
 
-  deploy-backend:
+deploy-backend:
     docker:
-      - image: cimg/python:3.10.6
-
+      - image: python:3.11-rc-alpine
     steps:
       - checkout 
       - install_awscli
-      # - install_nodejs
-      # - install_ansible
       - add_ssh_keys:
           fingerprints:
             - "e3:13:d7:86:83:cb:b4:e3:5f:da:56:9e:ef:96:3d:05"
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            python3 -m pip install --user ansible
-            sudo apt update
-            sudo apt install nodejs
-            sudo apt install npm
-            sudo apt install curl
-            sudo apt-get install -y openssh-server openssh-client
-      - run: 
-          name: Add env vars to env file
+            apk update
+            apk add --update ansible
+            apk add --no-cache tar npm gzip curl gcompat
+            apk add --no-cache python3 py3-pip
+            pip3 install --upgrade pip
+            pip3 install awscli
+            rm -rf /var/cache/apk/*
+            echo "Test aws cli version"
+            aws --version
+            which aws
+      - run:
+          name: Build backend
           command: |
-            echo "NODE_ENV=production" >> backend/.env
-            echo "VERSION=1" >> backend/.env
-            echo "TYPEORM_CONNECTION=${TYPEORM_CONNECTION}" >> backend/.env
-            echo "TYPEORM_MIGRATIONS_DIR=${TYPEORM_MIGRATIONS_DIR}" >> backend/.env
-            echo "TYPEORM_ENTITIES=${TYPEORM_ENTITIES}" >> backend/.env
-            echo "TYPEORM_MIGRATIONS=${TYPEORM_MIGRATIONS}" >> backend/.env
-            echo "TYPEORM_HOST=${TYPEORM_HOST}" >> backend/.env
-            echo "TYPEORM_PORT=${TYPEORM_PORT}" >> backend/.env
-            echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> backend/.env
-            echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> backend/.env
-            echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> backend/.env  
-      - run: 
-          name: Package backend
-          command: |
+            sed 's/local/production/g' ~/project/backend/.env
             cd backend
-            npm i
+            npm install
+            echo "--- Backend variables ---"
+            cat ~/project/backend/.env
             npm run build
-            tar -czf artifact.tar.gz dist/* package*
-            cd ..
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+      - run:
+          name: Create backend artifact
+          command: |
+            tar czf backend-artifact.tar.gz backend
       - run:
           name: Deploy backend
           command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
-            BACKEND_PUBLIC_IP=$(aws ec2 describe-instances \
-              --filters Name=tag:Name,Values="backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text)
-            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
-  
-            cd .circleci/ansible
-            cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml
+            echo "Contents of the inventory.txt file is:"
+            cat ~/project/.circleci/ansible/inventory.txt
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
       - destroy-environment
       - revert-migrations 
 
