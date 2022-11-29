@@ -334,7 +334,7 @@ jobs:
       - image: python:3.11-rc-alpine
     steps:
       - checkout 
-      - install_awscli
+      # - install_awscli
       - add_ssh_keys:
           fingerprints:
             - "e3:13:d7:86:83:cb:b4:e3:5f:da:56:9e:ef:96:3d:05"
