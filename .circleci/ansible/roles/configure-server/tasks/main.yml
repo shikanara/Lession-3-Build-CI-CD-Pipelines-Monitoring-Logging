@@ -1,32 +1,29 @@
----
-- name: "Install python"
+- name: "Update apt packages."
   become: true
   apt:
-    name: python3
-    state: latest
-    update_cache: "yes"
+    update_cache: yes
 
-- name: "wait 600 seconds for target connection to become reachable/usable."
-  wait_for_connection:
-    timeout: 600
-    
-- name: "Update/upgrade packages"
+- name: "Upgrade packages."
   become: true
   apt:
-    update_cache: "yes"
-    upgrade: "yes"
+    upgrade: yes
 
-- name: "install dependencies."
+- name: "Remove dependencies that are no longer required."
+  become: true
+  apt:
+    autoremove: yes
+
+- name: "Install dependencies."
   become: true
   apt:
     name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
 
-- name: "Install pm2"
+- name: "Install pm2."
   become: true
   npm:
-    name: "pm2"
-    global: true
-    production: true
+    name: pm2
+    global: yes
+    production: yes
     state: present

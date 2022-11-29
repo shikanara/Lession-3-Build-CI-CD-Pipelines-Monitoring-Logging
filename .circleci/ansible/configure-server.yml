@@ -1,6 +1,6 @@
 ---
-
-- name: "configuration play." 
+- name: "Infrastructure configuration play"
+  # Get from `inventory.txt`
   hosts: web
   user: ubuntu
   become: true
@@ -35,6 +35,7 @@
     - TYPEORM_MIGRATIONS: "{{ lookup('env', 'TYPEORM_MIGRATIONS')}}"
     - TYPEORM_MIGRATIONS_DIR: "{{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}"
 
+# The task will be run in Ansible playbook.
   roles:
     - configure-prometheus-node-exporter
     - configure-server
