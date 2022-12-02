@@ -249,10 +249,6 @@ jobs:
       - checkout 
       - add_ssh_keys:
           fingerprints: ["e3:13:d7:86:83:cb:b4:e3:5f:da:56:9e:ef:96:3d:05"]
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/backend/.env
       - run:
           name: Install dependencies
           command: |
